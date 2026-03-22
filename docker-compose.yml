@@ -1,0 +1,67 @@
+# PostgreSQL + FastAPI. Frontend: run locally with
+#   NEXT_PUBLIC_API_URL=http://localhost:8000/api npm run dev
+# Optional reverse proxy (same-origin /api): docker compose --profile full up
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: psy
+      POSTGRES_PASSWORD: psy
+      POSTGRES_DB: psytests
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psy -d psytests"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://psy:psy@postgres:5432/psytests
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      APP_BASE_URL: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - reports_tmp:/tmp/reports
+
+  nginx:
+    profiles: ["full"]
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
+  frontend:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
+        API_INTERNAL_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  reports_tmp:

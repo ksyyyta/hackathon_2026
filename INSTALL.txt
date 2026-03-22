@@ -1,0 +1,28 @@
+﻿================================================================================
+  INSTALL.TXT - How to Restore the Optimized Project
+================================================================================
+
+This is an optimized copy with node_modules and .next excluded.
+Follow these steps to get a fully working development environment:
+
+1. INSTALL DEPENDENCIES
+   npm install
+   (or: pnpm install)
+
+2. SET UP ENVIRONMENT
+   copy .env.example .env
+
+3. BUILD (optional, for production)
+   npm run build
+
+4. RUN DEVELOPMENT
+   npm run dev
+   App at http://localhost:3000
+
+5. RUN PRODUCTION (after build)
+   npm run start
+
+DOCKER: docker-compose up --build
+
+SUMMARY: npm install -> npm run build -> npm run dev
+================================================================================
